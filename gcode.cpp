@@ -5,7 +5,6 @@
 #include <QTextStream>
 #include <algorithm>
 
-
 GCode::GCode(QObject *parent) 
     : QObject(parent),
       mSpeedUnis(Units::mmPerS)
@@ -23,7 +22,6 @@ void GCode::clearData()
     mLines.clear();
     qDeleteAll(mMoves);
     mMoves.clear();
-//    mZs.clear();
 }
 
 void GCode::buildMapping()
@@ -41,38 +39,6 @@ void GCode::clearMapping()
     mLMMap.clear();
     mMLMap.clear();
 }
-
-QString GCode::getStringParameter(const GLine &line, char p) const
-{
-    for (int i = 0; i < line.fields().length(); ++i) {
-        QString f = line.fields().at(i);
-        if (f.startsWith(p)) {
-            return f.mid(1);
-        }
-    }
-    return QString();
-}
-
-double GCode::getDoubleParameter(const GLine &line, char p) const
-{
-    return getStringParameter(line, p).toDouble();
-}
-
-float GCode::getFloatParameter(const GLine &line, char p) const
-{
-    return getStringParameter(line, p).toFloat();
-}
-
-int GCode::getIntParameter(const GLine &line, char p) const
-{
-    return getStringParameter(line, p).toInt();
-}
-
-//void GCode::updateBounds(double X, double Y)
-//{
-//    if (X > mWidth) mWidth = X;
-//    if (Y > mHeight) mHeight = Y;
-//}
 
 bool GCode::read(const QString &fileName)
 {
@@ -108,35 +74,35 @@ bool GCode::read(const QString &fileName)
         
         //@TODO: rewrite
         if (l->code() == "G92") {
-            mods.extruderShift = mp->ET() - getDoubleParameter(*l, 'E');
+            mods.extruderShift = mp->ET() - l->parameter('E');
             
         } else if (l->code().startsWith('M')) {
             if (l->code() == "M220") {
-                mods.speedFactor = getFloatParameter(*l, 'S') / 100.0;
+                mods.speedFactor = l->parameterFloat('S') / 100.0;
                 
             } else if (l->code() == "M221") {
-                mods.extrudeFactor = getFloatParameter(*l, 'S') / 100.0;
+                mods.extrudeFactor = l->parameterFloat('S') / 100.0;
                 
             } else if (l->code() == "M104") {
-                mods.extTemp = getFloatParameter(*l, 'S');
+                mods.extTemp = l->parameterFloat('S');
                 
             } else if (l->code() == "M109") {
-                mods.extTemp = getFloatParameter(*l, 'S');
+                mods.extTemp = l->parameterFloat('S');
                 if (mods.extTemp == 0) {
-                    mods.extTemp = getFloatParameter(*l, 'R');
+                    mods.extTemp = l->parameterFloat('R');
                 }
                 
             } else if (l->code() == "M140") {
-                mods.bedTemp = getFloatParameter(*l, 'S');
+                mods.bedTemp = l->parameterFloat('S');
                 
             } else if (l->code() == "M190") {
-                mods.bedTemp = getFloatParameter(*l, 'S');
+                mods.bedTemp = l->parameterFloat('S');
                 if (mods.bedTemp == 0) {
-                    mods.bedTemp = getFloatParameter(*l, 'R');
+                    mods.bedTemp = l->parameterFloat('R');
                 }
                 
             } else if (l->code() == "M106") {
-                mods.fanSpeed = getIntParameter(*l, 'S');
+                mods.fanSpeed = l->parameterInt('S');
                 
             } else if (l->code() == "M107") {
                 mods.fanSpeed = 0;
@@ -145,7 +111,7 @@ bool GCode::read(const QString &fileName)
         
         if (GMove::testCode(l->code())) {
             mMLMap.append(i);
-            GMove *m = new GMove(l->fields(), *mp, mods);
+            GMove *m = new GMove(*l, *mp, mods);
             mMoves.append(m);
             mp = m;
         }
@@ -160,132 +126,132 @@ bool GCode::read(const QString &fileName)
     return true;
 }
 
-int GCode::lineToMove(int line)
+int GCode::lineToMove(int l) const
 {
-    if (line < 0 || line >= mLMMap.size()) {
+    if (l < 0 || l >= mLMMap.size()) {
         return -1;
     }
-    return mLMMap.at(line);
+    return mLMMap.at(l);
 }
 
-int GCode::lineToMoveForward(int line)
+int GCode::lineToMoveForward(int l) const
 {
-    if (line < 0 || line >= mLMMap.size()) {
+    if (l < 0 || l >= mLMMap.size()) {
         return -1;
     }
 
-    int m = mLMMap.at(line++);
-    while (m < 0 && line < mLMMap.size()) {
-        m = mLMMap.at(line++);
+    int m = mLMMap.at(l++);
+    while (m < 0 && l < mLMMap.size()) {
+        m = mLMMap.at(l++);
     }
     return m < 0 ? mMoves.size() - 1 : m;
 }
 
-int GCode::lineToMoveBackward(int line)
+int GCode::lineToMoveBackward(int l) const
 {
-    if (line < 0 || line >= mLMMap.size()) {
+    if (l < 0 || l >= mLMMap.size()) {
         return -1;
     }
 
-    int m = mLMMap.at(line--);
-    while (m < 0 && line >= 0) {
-        m = mLMMap.at(line--);
+    int m = mLMMap.at(l--);
+    while (m < 0 && l >= 0) {
+        m = mLMMap.at(l--);
     }
     return (m < 0 && !mMoves.isEmpty()) ? 0 : m;
 }
 
-int GCode::moveToLine(int move)
+int GCode::moveToLine(int m)
 {
-    if (move < 0 || move >= mMLMap.size()) {
+    if (m < 0 || m >= mMLMap.size()) {
         return -1;
     }
-    return mMLMap.at(move);
+    return mMLMap.at(m);
 }
 
-double GCode::X(int move) const
+double GCode::X(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->X();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->X();
 }
 
-double GCode::Y(int move) const
+double GCode::Y(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->Y();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->Y();
 }
 
-double GCode::Z(int move) const
+double GCode::Z(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->Z();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->Z();
 }
 
-double GCode::E(int move) const
+double GCode::E(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->E();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->E();
 }
 
-double GCode::EE(int move) const
+double GCode::Ee(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->EE();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->Ee();
 }
 
-double GCode::ET(int move) const
+double GCode::ET(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->ETe();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->ETe();
 }
 
-double GCode::F(int move) const
+double GCode::F(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    float f = mMoves.at(move)->F();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    float f = mMoves.at(m)->F();
     return mSpeedUnis == Units::mmPerMin ? f : f / 60;
 }
 
-double GCode::FE(int move) const
+double GCode::Fe(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    float f = mMoves.at(move)->FE();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    float f = mMoves.at(m)->Fe();
     return mSpeedUnis == Units::mmPerMin ? f : f / 60;
 }
 
-double GCode::distance(int move) const
+double GCode::distance(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->distance();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->distance();
 }
 
-double GCode::dEE(int move) const
+double GCode::dEe(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->dEe();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->dEe();
 }
 
-double GCode::flow(int move) const
+double GCode::flow(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->flowE();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->flowE();
 }
 
-float GCode::bedT(int move) const
+float GCode::bedT(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->bedT();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->bedT();
 }
 
-float GCode::extT(int move, int /*n*/) const
+float GCode::extT(int m, int /*e*/) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->extT();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->extT();
 }
 
-float GCode::fanSpeed(int move) const
+float GCode::fanSpeed(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return mMoves.at(move)->fanSpeed();
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->fanSpeed();
 }
 
 GMove::MoveType GCode::moveType(int move) const
@@ -294,10 +260,10 @@ GMove::MoveType GCode::moveType(int move) const
     return mMoves.at(move)->type();
 }
 
-QPointF GCode::XY(int move) const
+QPointF GCode::XY(int m) const
 {
-    Q_ASSERT(move >= 0 && move < mMoves.size());
-    return QPointF(mMoves.at(move)->X(), mMoves.at(move)->Y());
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return QPointF(mMoves.at(m)->X(), mMoves.at(m)->Y());
 }
 
 //double GCode::zLayer(int layer) const
@@ -316,13 +282,13 @@ void GCode::selectAll()
     select(0, mLines.size() - 1);
 }
 
-void GCode::select(int line)
+void GCode::select(int l)
 {
-    Q_ASSERT(line >= 0 && line < mLines.size());
-    if (mSelected.testBit(line)) return;
-    if (mVisible.testBit(line)) {
-        mSelected.setBit(line);
-        emit selectionChanged(line, line);
+    Q_ASSERT(l >= 0 && l < mLines.size());
+    if (mSelected.testBit(l)) return;
+    if (mVisible.testBit(l)) {
+        mSelected.setBit(l);
+        emit selectionChanged(l, l);
     }
 }
 
@@ -352,13 +318,13 @@ void GCode::deselectAll()
     deselect(0, mLines.size() - 1);
 }
 
-void GCode::deselect(int line)
+void GCode::deselect(int l)
 {
-    Q_ASSERT(line >= 0 && line < mLines.size());
-    if (!mSelected.testBit(line)) return;
+    Q_ASSERT(l >= 0 && l < mLines.size());
+    if (!mSelected.testBit(l)) return;
 
-    mSelected.clearBit(line);
-    emit selectionChanged(line, line);
+    mSelected.clearBit(l);
+    emit selectionChanged(l, l);
 }
 
 void GCode::deselect(int firstLine, int lastLine)
@@ -380,14 +346,14 @@ void GCode::deselect(int firstLine, int lastLine)
     }
 }
 
-bool GCode::toggleSelection(int line) 
+bool GCode::toggleSelection(int l) 
 {
-    Q_ASSERT(line >= 0 && line < mLines.size());
-    if (mVisible.testBit(line)) {
-        mSelected.toggleBit(line);
-        emit selectionChanged(line, line);
+    Q_ASSERT(l >= 0 && l < mLines.size());
+    if (mVisible.testBit(l)) {
+        mSelected.toggleBit(l);
+        emit selectionChanged(l, l);
     }
-    return mSelected.testBit(line); 
+    return mSelected.testBit(l); 
 }
 
 void GCode::toggleSelection(int firstLine, int lastLine)
@@ -412,13 +378,13 @@ void GCode::showAll()
     show(0, mLines.size() - 1);
 }
 
-void GCode::show(int line)
+void GCode::show(int l)
 {
-    Q_ASSERT(line >= 0 && line < mLines.size());
-    if (mVisible.testBit(line)) return;
+    Q_ASSERT(l >= 0 && l < mLines.size());
+    if (mVisible.testBit(l)) return;
 
-    mVisible.setBit(line);
-    emit visibilityChanged(line, line);
+    mVisible.setBit(l);
+    emit visibilityChanged(l, l);
 }
 
 void GCode::show(int firstLine, int lastLine)
@@ -445,14 +411,14 @@ void GCode::hideAll()
     hide(0, mLines.size() - 1);
 }
 
-void GCode::hide(int line)
+void GCode::hide(int l)
 {
-    Q_ASSERT(line >= 0 && line < mLines.size());
-    if (!mVisible.testBit(line)) return;
+    Q_ASSERT(l >= 0 && l < mLines.size());
+    if (!mVisible.testBit(l)) return;
 
-    mVisible.clearBit(line);
-    deselect(line);
-    emit visibilityChanged(line, line);
+    mVisible.clearBit(l);
+    deselect(l);
+    emit visibilityChanged(l, l);
 }
 
 void GCode::hide(int firstLine, int lastLine)
@@ -475,16 +441,16 @@ void GCode::hide(int firstLine, int lastLine)
     }
 }
 
-bool GCode::toggleVisible(int line)
+bool GCode::toggleVisible(int l)
 {
-    Q_ASSERT(line >= 0 && line < mLines.size());
+    Q_ASSERT(l >= 0 && l < mLines.size());
     
-    mVisible.toggleBit(line);
-    if (!mVisible.testBit(line)) {
-        deselect(line);
+    mVisible.toggleBit(l);
+    if (!mVisible.testBit(l)) {
+        deselect(l);
     }
-    emit visibilityChanged(line, line);
-    return mVisible.testBit(line);
+    emit visibilityChanged(l, l);
+    return mVisible.testBit(l);
 }
 
 void GCode::toggleVisible(int firstLine, int lastLine)

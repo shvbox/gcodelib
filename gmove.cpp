@@ -1,5 +1,7 @@
 #include "gmove.h"
 
+#include "gline.h"
+
 #include <QMap>
 #include <QtMath>
 
@@ -13,14 +15,15 @@ GMove::GMove()
       mDE(0.0),
       mET(0.0),
       mLen(0.0),
-      mEE(0.0),
-      mDEE(0.0),
-      mFlow(0.0),
+      mEe(0.0),
+      mETe(0.0),
+      mDEe(0.0),
+      mFlowE(0.0),
       mType(None)
 {
 }
 
-GMove::GMove(const QStringList &fields, const GMove &previous, const GMoveModifiers &mods)
+GMove::GMove(const GLine &line, const GMove &previous, const GMoveModifiers &mods)
     : mX(0.0),
       mY(0.0),
       mZ(0.0),
@@ -31,51 +34,40 @@ GMove::GMove(const QStringList &fields, const GMove &previous, const GMoveModifi
       mDE(0.0),
       mET(0.0),
       mLen(0.0),
-      mEE(0.0),
-      mDEE(0.0),
-      mFlow(0.0),
+      mEe(0.0),
+      mETe(0.0),
+      mDEe(0.0),
+      mFlowE(0.0),
       mType(None)
-      
 {
-    if (fields.isEmpty() || !testCode(fields.at(0))) {
+    QString code = line.code();
+    if (!testCode(code)) {
         return;
     }
     
-    QMap<char, QString> m;
-    for (int i = 1; i < fields.size(); i++) {
-        QString f = fields[i];
-        char p = f.at(0).toUpper().toLatin1();
-        m.insert(p, f.mid(1));
-    }
-    
     bool ok = false;
-    QString code = fields.at(0);
     if (code == "G1" || code == "G0") {
-        QString strVal = m.take('X');
-        double doubleVal = strVal.toDouble(&ok);
-        mX = ok ? doubleVal : previous.X();
+        double p = line.parameter('X', &ok);
+        mX = ok ? p : previous.X();
         
-        strVal = m.take('Y');
-        doubleVal = strVal.toDouble(&ok);
-        mY = ok ? doubleVal : previous.Y();
+        p = line.parameter('Y', &ok);
+        mY = ok ? p : previous.Y();
         
-        strVal = m.take('Z');
-        doubleVal = strVal.toDouble(&ok);
-        mZ = ok ? doubleVal : previous.Z();
+        p = line.parameter('Z', &ok);
+        mZ = ok ? p : previous.Z();
         
-        strVal = m.take('E');
-        doubleVal = strVal.toDouble(&ok);
-        mE = ok ? doubleVal : previous.E();
+        p = line.parameter('E', &ok);
+        mE = ok ? p : previous.E();
         
-        strVal = m.take('F');
-        doubleVal = strVal.toDouble(&ok);
-        mF = ok ? doubleVal : previous.F();
+        p = line.parameter('F', &ok);
+        mF = ok ? p : previous.F();
         
     } else if (code == "G28") {
-        if (!m.isEmpty()) {
-            mX = m.contains('X') ? 0.0 :previous.X();
-            mY = m.contains('Y') ? 0.0 :previous.Y();
-            mZ = m.contains('Z') ? 0.0 :previous.Z();
+        QList<char> pars = line.parameters();
+        if (!pars.isEmpty()) {
+            mX = pars.contains('X') ? 0.0 :previous.X();
+            mY = pars.contains('Y') ? 0.0 :previous.Y();
+            mZ = pars.contains('Z') ? 0.0 :previous.Z();
         }
     }
     
@@ -87,42 +79,40 @@ GMove::GMove(const QStringList &fields, const GMove &previous, const GMoveModifi
         mLen = 0.0;
     }
     
-//    mEShift = previous.ET() - mods.newExtPosition;
-    
     mET = mE + mods.extruderShift;
     
     if (qFuzzyCompare(mE, previous.E())) {
         mDE = 0.0;
-        mDEE = 0.0;
-        mEE = previous.EE();
+        mDEe = 0.0;
+        mEe = previous.Ee();
         
     } else {
-        mDE = ET() - previous.ET();
-        if (qFuzzyCompare(mDE + 1, qreal(1.0))) {
+        mDE = mET - previous.ET();
+        if (qFuzzyCompare(mDE + 1, 1.0)) {
             mDE = 0.0;
         }
         
-        mDEE = dE() * mMods.extrudeFactor;
-        if (qFuzzyCompare(mDEE + 1, qreal(1.0))) {
-            mDEE = 0.0;
+        mDEe = mDE * mMods.extrudeFactor;
+        if (qFuzzyCompare(mDEe + 1, 1.0)) {
+            mDEe = 0.0;
         }
         
         if (previous.ET() == mMods.extruderShift) {
-            mEE = dEe();
+            mEe = mDEe;
             
         } else {
-            mEE = previous.EE() + dEe();
+            mEe = previous.Ee() + mDEe;
         }
     }
 
-    mETE = previous.ETe() + dEe();
+    mETe = previous.ETe() + mDEe;
     
-    mFlow = distance() == 0.0 ? 0.0 : (dEe() / distance());
+    mFlowE = mLen == 0.0 ? 0.0 : (mDEe / mLen);
     
-    if (distance() > 0.0) {
-        mType = dEe() != 0.0 ? Extrusion : Traverse;
+    if (mLen > 0.0) {
+        mType = mDEe == 0.0 ? Travel : (mDEe > 0 ? Extrusion : Suck);
     } else {
-        mType = dEe() > 0.0 ? RetractPrime : RetractSuck;
+        mType = mDEe == 0.0 ? None : (mDEe > 0 ? DestringPrime : DestringSuck);
     }
 }
 

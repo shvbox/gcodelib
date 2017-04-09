@@ -3,6 +3,15 @@
 const QRegExp commentsSplitter(";");
 const QRegExp fieldsSplitter("\\s");
 
+GLine::GLine()
+    : mLine(QString()),
+      mLineType(Empty),
+      mCommand(QString()),
+      mComment(QString()),
+      mSelected(false)
+{
+}
+
 GLine::GLine(const QString &line)
     : mLine(line),
       mLineType(Empty),
@@ -36,6 +45,16 @@ GLine::GLine(const QString &line)
         if (mLineType == Command) {
             mFields = mCommand.split(fieldsSplitter, QString::SkipEmptyParts);
         }
+        
+        QString c = code();
+        if (!(c.isEmpty() || c == "M117")) {
+            for (int i = 1; i < mFields.size(); i++) {
+                QString f = mFields[i];
+                char p = f.at(0).toUpper().toLatin1();
+                mKeys.append(p);
+                mParameters.insert(p, f.mid(1));
+            }
+        }
     }
 }
 
@@ -46,6 +65,38 @@ QString GLine::code() const
     }
     
     return mFields.at(0);
+}
+
+double GLine::parameter(const char &p, bool *ok) const
+{
+    QString par = parameterStr(p, ok);
+    return par.isEmpty() ? 0.0 :par.toDouble(ok);
+}
+
+float GLine::parameterFloat(const char &p, bool *ok) const
+{
+    QString par = parameterStr(p, ok);
+    return par.isEmpty() ? 0.0f :par.toFloat(ok);
+}
+
+int GLine::parameterInt(const char &p, bool *ok) const
+{
+    QString par = parameterStr(p, ok);
+    return par.isEmpty() ? 0 :par.toInt(ok);
+}
+
+QString GLine::parameterStr(const char &p, bool *ok) const
+{
+    bool yes = mParameters.contains(p);
+    if (ok) {
+        *ok = yes;
+    }
+    
+    if (yes) {
+        return mParameters.value(p);
+    }
+    
+    return QString();
 }
 
 void GLine::select()

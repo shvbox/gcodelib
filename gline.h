@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QStringList>
+#include <QMap>
 
 class GLine 
 {
@@ -15,10 +16,9 @@ public:
         Comment
     };
 
-private:
-    explicit GLine(const QString &line);
+    GLine();
     
-    QString line() const { return mLine; }
+    QString text() const { return mLine; }
     QString command() const { return mCommand; }
     QString code() const;
     QStringList fields() const { return mFields; }
@@ -26,17 +26,29 @@ private:
     LineType type() const { return mLineType; }
     
     bool selected() const { return mSelected; }
+
+    QList<char> parameters() const { return mKeys; }
+    double parameter(const char &p, bool *ok = 0) const;
+    float parameterFloat(const char &p, bool *ok = 0) const;
+    int parameterInt(const char &p, bool *ok = 0) const;
+    QString parameterStr(const char &p, bool *ok = 0) const;
+    
+private:
+    explicit GLine(const QString &text);
     void select();
     void deselect();
     bool toggleSelection();
     
 private:
+    
     QString mLine;
     LineType mLineType;
     
     QString mCommand;
     QString mComment;
     QStringList mFields;
+    QList<char> mKeys;
+    QMap<char, QString> mParameters;
     
     bool mSelected;
 };

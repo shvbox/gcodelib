@@ -25,62 +25,61 @@ public:
 //    int zCount() const { return mZs.size(); }
     
     // G-Code Lines
-    QString line(int line) const { return mLines.at(line)->line(); }
-    QString command(int line) const { return mLines.at(line)->command(); }
-    QString comment(int line) const { return mLines.at(line)->comment(); }
-    GLine::LineType lineType(int line) const { return mLines.at(line)->type(); }
-    QString code(int line) const { return mLines.at(line)->code(); }
+    GLine line(int l) const { return *(mLines.at(l)); }
+    QString text(int l) const { return mLines.at(l)->text(); }
+    QString command(int l) const { return mLines.at(l)->command(); }
+    QString comment(int l) const { return mLines.at(l)->comment(); }
+    GLine::LineType lineType(int l) const { return mLines.at(l)->type(); }
+    QString code(int l) const { return mLines.at(l)->code(); }
 
     // Moves
-    int lineToMove(int line);
-    int lineToMoveForward(int line);
-    int lineToMoveBackward(int line);
-    int moveToLine(int move);
-    double X(int move) const;
-    double Y(int move) const;
-    double Z(int move) const;
-    double E(int move) const;
-    double F(int move) const;
+    GMove move(int m) const { return *(mMoves.at(m)); }
+    int lineToMove(int l) const;
+    int lineToMoveForward(int l) const;
+    int lineToMoveBackward(int l) const;
+    int moveToLine(int m);
+    double X(int m) const;
+    double Y(int m) const;
+    double Z(int m) const;
+    double E(int m) const;
+    double F(int m) const;
     
     GMove::MoveType moveType(int move) const;
     
-    double FE(int move) const;
-    double EE(int move) const;
-    double ET(int move) const;
-    double distance(int move) const;
-    double dEE(int move) const;
-    double flow(int move) const;
-    float bedT(int move) const;
-    float extT(int move, int n = 0) const;
-    float fanSpeed(int move) const;
+    double Fe(int m) const;
+    double Ee(int m) const;
+    double ET(int m) const;
+    double distance(int m) const;
+    double dEe(int m) const;
+    double flow(int m) const;
+    float bedT(int m) const;
+    float extT(int m, int e = 0) const;
+    float fanSpeed(int m) const;
     
-    QPointF XY(int move) const;
+    QPointF XY(int m) const;
 
-    // Information
-    double zLayer(int layer) const;
-    
     // Selection
-    bool selected(int line) const { return mSelected.at(line); }
+    bool selected(int l) const { return mSelected.at(l); }
     QBitArray selection() const { return mSelected; }
     void selectAll();
-    void select(int line);
+    void select(int l);
     void select(int firstLine, int lastLine);
     void deselectAll();
-    void deselect(int line);
+    void deselect(int l);
     void deselect(int firstLine, int lastLine);
-    bool toggleSelection(int line);
+    bool toggleSelection(int l);
     void toggleSelection(int firstLine, int lastLine);
     
-    // Appearance
-    bool visible(int line) const { return mVisible.testBit(line); }
+    // Visibility
+    bool visible(int l) const { return mVisible.testBit(l); }
     QBitArray visibility() const { return mVisible; }
     void showAll();
-    void show(int line);
+    void show(int l);
     void show(int firstLine, int lastLine);
     void hideAll();
-    void hide(int line);
+    void hide(int l);
     void hide(int firstLine, int lastLine);
-    bool toggleVisible(int line);
+    bool toggleVisible(int l);
     void toggleVisible(int firstLine, int lastLine);
     
 signals:
@@ -97,16 +96,10 @@ private:
     void buildMapping();
     void clearMapping();
     
-    QString getStringParameter(const GLine &line, char p) const;
-    double getDoubleParameter(const GLine &line, char p) const;
-    float getFloatParameter(const GLine &line, char p) const;
-    int getIntParameter(const GLine &line, char p) const;
-    
     Units::SpeedUnits mSpeedUnis;
     
     QList<GLine*> mLines;
     QList<GMove*> mMoves;
-//    QVector<double> mZs;
     
     QBitArray mSelected;
     QBitArray mVisible;
