@@ -5,17 +5,17 @@ TEMPLATE = lib
 CONFIG += staticlib
 
 SOURCES += gcode.cpp \
-    gline.cpp \
     gmove.cpp \
     gnavigator.cpp \
-    gnavigatoritem.cpp
+    gnavigatoritem.cpp \
+    gcodeline.cpp
 
 HEADERS += gcode.h \
-    gline.h \
     gmove.h \
     gcodelib.h \
     gnavigator.h \
-    gnavigatoritem.h
+    gnavigatoritem.h \
+    gcodeline.h
 unix {
     target.path = /usr/lib
     INSTALLS += target

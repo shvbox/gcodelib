@@ -39,6 +39,7 @@ public:
 
     GNavigatorItem* parentItem();
     GNavigatorItem* child(int row);
+    GNavigatorItem& child(int row) const;
     GNavigatorItem* firstChild() { return mChildItems.isEmpty() ? NULL : mChildItems.first(); }
     GNavigatorItem* lastChild() { return mChildItems.isEmpty() ? NULL : mChildItems.last(); }
     
@@ -57,7 +58,7 @@ public:
     
     bool operator==(const GNavigatorItem &v) const { return mFirstLine == v.mFirstLine && mLastLine == v.mLastLine; }
     bool operator!=(const GNavigatorItem &v) const { return !(*this == v); }
-
+    
 private:
     GNavigatorItem *mParentItem;
     QList<GNavigatorItem*> mChildItems;

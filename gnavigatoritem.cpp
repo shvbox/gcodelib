@@ -76,6 +76,11 @@ GNavigatorItem *GNavigatorItem::child(int row)
     return mChildItems.value(row);
 }
 
+GNavigatorItem& GNavigatorItem::child(int row) const
+{
+    return *(mChildItems.value(row));
+}
+
 void GNavigatorItem::setType(GNavigatorItem::ItemType type)
 {
     if (mType == Invalid) {

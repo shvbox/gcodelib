@@ -8,7 +8,7 @@
 #include <QPointF>
 
 #include "gcodelib.h"
-#include "gline.h"
+#include "gcodeline.h"
 #include "gmove.h"
 
 class GCode : public QObject
@@ -25,11 +25,11 @@ public:
 //    int zCount() const { return mZs.size(); }
     
     // G-Code Lines
-    GLine line(int l) const { return *(mLines.at(l)); }
+    GCodeLine line(int l) const { return *(mLines.at(l)); }
     QString text(int l) const { return mLines.at(l)->text(); }
     QString command(int l) const { return mLines.at(l)->command(); }
     QString comment(int l) const { return mLines.at(l)->comment(); }
-    GLine::LineType lineType(int l) const { return mLines.at(l)->type(); }
+    GCodeLine::LineType lineType(int l) const { return mLines.at(l)->type(); }
     QString code(int l) const { return mLines.at(l)->code(); }
 
     // Moves
@@ -41,10 +41,15 @@ public:
     double X(int m) const;
     double Y(int m) const;
     double Z(int m) const;
+    double I(int m) const;
+    double J(int m) const;
     double E(int m) const;
     double F(int m) const;
     
     GMove::MoveType moveType(int move) const;
+
+    double R(int m) const; // Arc radius
+    double length(int m) const; // Move distance
     
     double Fe(int m) const;
     double Ee(int m) const;
@@ -57,7 +62,10 @@ public:
     float fanSpeed(int m) const;
     
     QPointF XY(int m) const;
-
+    QPointF IJ(int m) const;
+    QPointF CXY(int m) const;
+    GMove::ArcDirection arcDirection(int move) const;
+    
     // Selection
     bool selected(int l) const { return mSelected.at(l); }
     QBitArray selection() const { return mSelected; }
@@ -98,7 +106,7 @@ private:
     
     Units::SpeedUnits mSpeedUnis;
     
-    QList<GLine*> mLines;
+    QList<GCodeLine*> mLines;
     QList<GMove*> mMoves;
     
     QBitArray mSelected;

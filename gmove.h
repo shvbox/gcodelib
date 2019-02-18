@@ -4,7 +4,9 @@
 #include <QString>
 #include <QStringList>
 
-class GLine;
+#include "gcodelib.h"
+
+class GCodeLine;
 
 struct GMoveModifiers {
     GMoveModifiers() 
@@ -37,16 +39,31 @@ public:
         DestringPrime
     };
 
+    enum ArcDirection {
+        Undefined = 0,
+        CW = -1,
+        CCW = 1
+    };
+
     GMove();
     
     double X() const { return mX; }
     double Y() const { return mY; }
     double Z() const { return mZ; }
-    double E() const { return mE; }
-    double F() const { return mF; }
-    int S() const { return mS; }
+    double I() const { return mI; } // Arc center offset from current position in X axis
+    double J() const { return mJ; } // Arc center offset from current position in Y axis
+    double E() const { return mE; } // Extrusion
+    double F() const { return mF; } // Feedrate
+    int S() const { return mS; }    // S Parameter
     
     MoveType type() const { return mType; }
+    
+    double length() const { return mLen; }
+    
+    double CX() const { return mCX; } // Arc center X
+    double CY() const { return mCY; } // Arc center Y
+    double R() const { return mR; } // Arc radius
+    ArcDirection arcDirection() const { return mArcDir; } // Arc direction
     
     double dE() const { return mDE; } // Delta E value
     double ET() const { return mET; } // Total extrusion value
@@ -65,7 +82,7 @@ public:
     double flowE() const { return mFlowE; } // Effective flow (dE / distance)
 
 private:
-    GMove(const GLine &line, const GMove &previous = GMove(), const GMoveModifiers &mods = GMoveModifiers());
+    GMove(const GCodeLine &line, const GMove &previous = GMove(), const GMoveModifiers &mods = GMoveModifiers());
     
     static bool testCode(const QString &code);
     
@@ -73,6 +90,11 @@ private:
     double mX;
     double mY;
     double mZ;
+    double mI; // Arc center offset from current position in X axis
+    double mJ; // Arc center offset from current position in Y axis
+    double mCX; // Arc center X
+    double mCY; // Arc center Y
+    double mR; // Arc radius
     double mE;
     double mF;
     int mS;
@@ -89,6 +111,7 @@ private:
     
     double mFlowE;
     
+    ArcDirection mArcDir;
     MoveType mType;
 };
 

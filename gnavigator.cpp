@@ -181,11 +181,11 @@ void GNavigator::setupModelData()
     GNavigatorItem *route = NULL;
     
     for (int line = 0; line < mGCode->linesCount(); ++line) {
-        GLine::LineType lineType = mGCode->lineType(line);
+        GCodeLine::LineType lineType = mGCode->lineType(line);
         GNavigatorItem::ItemType itemType = GNavigatorItem::Invalid;
         int move = -1;
         
-        if (lineType == GLine::Command) {
+        if (lineType == GCodeLine::Command) {
             move = mGCode->lineToMove(line);
             if (move >= 0) {
                 double zm = mGCode->Z(move);
@@ -200,7 +200,7 @@ void GNavigator::setupModelData()
                 itemType = GNavigatorItem::Command;
             }
             
-        } else if (lineType == GLine::Comment) {
+        } else if (lineType == GCodeLine::Comment) {
             itemType = GNavigatorItem::Comment;
             
         } else {
@@ -291,6 +291,8 @@ void GNavigator::finishLayerItem(GNavigatorItem *item, int lastLine, GNavigatorI
         item->setType(GNavigatorItem::Layer);
         item->setLastLine(lastLine);
         item->setInfo(data);
+        
+        mZMap.insert(data.z, item);
     }
 }
 

@@ -1,9 +1,9 @@
-#include "gline.h"
+#include "gcodeline.h"
 
 const QRegExp commentsSplitter(";");
 const QRegExp fieldsSplitter("\\s");
 
-GLine::GLine()
+GCodeLine::GCodeLine()
     : mLine(QString()),
       mLineType(Empty),
       mCommand(QString()),
@@ -12,7 +12,7 @@ GLine::GLine()
 {
 }
 
-GLine::GLine(const QString &line)
+GCodeLine::GCodeLine(const QString &line)
     : mLine(line),
       mLineType(Empty),
       mCommand(QString()),
@@ -58,7 +58,7 @@ GLine::GLine(const QString &line)
     }
 }
 
-QString GLine::code() const
+QString GCodeLine::code() const
 {
     if (mFields.isEmpty()) {
         return QString();
@@ -67,25 +67,25 @@ QString GLine::code() const
     return mFields.at(0);
 }
 
-double GLine::parameter(const char &p, bool *ok) const
+double GCodeLine::parameter(const char &p, bool *ok) const
 {
     QString par = parameterStr(p, ok);
     return par.isEmpty() ? 0.0 :par.toDouble(ok);
 }
 
-float GLine::parameterFloat(const char &p, bool *ok) const
+float GCodeLine::parameterFloat(const char &p, bool *ok) const
 {
     QString par = parameterStr(p, ok);
     return par.isEmpty() ? 0.0f :par.toFloat(ok);
 }
 
-int GLine::parameterInt(const char &p, bool *ok) const
+int GCodeLine::parameterInt(const char &p, bool *ok) const
 {
     QString par = parameterStr(p, ok);
     return par.isEmpty() ? 0 :par.toInt(ok);
 }
 
-QString GLine::parameterStr(const char &p, bool *ok) const
+QString GCodeLine::parameterStr(const char &p, bool *ok) const
 {
     bool yes = mParameters.contains(p);
     if (ok) {
@@ -99,17 +99,17 @@ QString GLine::parameterStr(const char &p, bool *ok) const
     return QString();
 }
 
-void GLine::select()
+void GCodeLine::select()
 {
     mSelected = true;
 }
 
-void GLine::deselect()
+void GCodeLine::deselect()
 {
     mSelected = false;
 }
 
-bool GLine::toggleSelection()
+bool GCodeLine::toggleSelection()
 {
     mSelected = !mSelected;
     return mSelected;

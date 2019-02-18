@@ -1,11 +1,11 @@
-#ifndef GLINE_H
-#define GLINE_H
+#ifndef GCODELINE_H
+#define GCODELINE_H
 
 #include <QString>
 #include <QStringList>
 #include <QMap>
 
-class GLine 
+class GCodeLine 
 {
     friend class GCode;
     
@@ -16,7 +16,7 @@ public:
         Comment
     };
 
-    GLine();
+    GCodeLine();
     
     QString text() const { return mLine; }
     QString command() const { return mCommand; }
@@ -34,7 +34,7 @@ public:
     QString parameterStr(const char &p, bool *ok = 0) const;
     
 private:
-    explicit GLine(const QString &text);
+    explicit GCodeLine(const QString &text);
     void select();
     void deselect();
     bool toggleSelection();
@@ -53,4 +53,4 @@ private:
     bool mSelected;
 };
 
-#endif // GLINE_H
+#endif // GCODELINE_H

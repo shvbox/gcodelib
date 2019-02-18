@@ -57,7 +57,7 @@ bool GCode::read(const QString &fileName)
     QTextStream in(&file);
     while (!in.atEnd()) {
         QString line = in.readLine();
-        mLines.append(new GLine(line));
+        mLines.append(new GCodeLine(line));
     }
     
     int size = mLines.size();
@@ -70,7 +70,7 @@ bool GCode::read(const QString &fileName)
     GMoveModifiers mods;
     
     for (int i = 0; i < size; ++i) {
-        GLine *l = mLines.at(i);
+        GCodeLine *l = mLines.at(i);
         
         //@TODO: rewrite
         if (l->code() == "G92") {
@@ -186,6 +186,30 @@ double GCode::Z(int m) const
     return mMoves.at(m)->Z();
 }
 
+double GCode::I(int m) const
+{
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->I();
+}
+
+double GCode::J(int m) const
+{
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->J();
+}
+
+double GCode::R(int m) const
+{
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->R();
+}
+
+double GCode::length(int m) const
+{
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->length();
+}
+
 double GCode::E(int m) const
 {
     Q_ASSERT(m >= 0 && m < mMoves.size());
@@ -254,6 +278,12 @@ float GCode::fanSpeed(int m) const
     return mMoves.at(m)->fanSpeed();
 }
 
+GMove::ArcDirection GCode::arcDirection(int move) const
+{
+    Q_ASSERT(move >= 0 && move < mMoves.size());
+    return mMoves.at(move)->arcDirection();
+}
+
 GMove::MoveType GCode::moveType(int move) const
 {
     Q_ASSERT(move >= 0 && move < mMoves.size());
@@ -264,6 +294,18 @@ QPointF GCode::XY(int m) const
 {
     Q_ASSERT(m >= 0 && m < mMoves.size());
     return QPointF(mMoves.at(m)->X(), mMoves.at(m)->Y());
+}
+
+QPointF GCode::IJ(int m) const
+{
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return QPointF(mMoves.at(m)->I(), mMoves.at(m)->J());
+}
+
+QPointF GCode::CXY(int m) const
+{
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return QPointF(mMoves.at(m)->CX(), mMoves.at(m)->CY());
 }
 
 //double GCode::zLayer(int layer) const
