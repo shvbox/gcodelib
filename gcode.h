@@ -6,6 +6,7 @@
 #include <QVector>
 #include <QBitArray>
 #include <QPointF>
+#include <QTextStream>
 
 #include "gcodelib.h"
 #include "gcodeline.h"
@@ -18,11 +19,15 @@ public:
     explicit GCode(QObject *parent = 0);
     ~GCode();
     
-    bool read(const QString &fileName);
+    bool readFile(const QString &fileName);
+    bool readText(const QString &text);
+    bool readStream(QTextStream *in);
 
     int linesCount() const { return mLines.size(); }
     int movesCount() const { return mMoves.size(); }
 //    int zCount() const { return mZs.size(); }
+    
+    void clear();
     
     // G-Code Lines
     GCodeLine line(int l) const { return *(mLines.at(l)); }
@@ -50,6 +55,9 @@ public:
 
     double R(int m) const; // Arc radius
     double length(int m) const; // Move distance
+    
+    double Ff(int m) const;
+    double Ef(int m) const;
     
     double Fe(int m) const;
     double Ee(int m) const;

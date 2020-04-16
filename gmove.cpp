@@ -2,8 +2,9 @@
 
 #include "gcodeline.h"
 
-#include <QMap>
 #include <QtMath>
+#include <QMap>
+#include <QDebug>
 
 static const double PI = 3.14159265358979323846264338327950288419717;
 static const double PI_2 = 2 * 3.14159265358979323846264338327950288419717;
@@ -76,7 +77,7 @@ GMove::GMove(const GCodeLine &line, const GMove &previous, const GMoveModifiers 
         mJ = ok ? p : 0.0;
         
         p = line.parameter('E', &ok);
-        mE = ok ? p : previous.E();
+        mE = ok ? p : (mods.extrusionIsAbsolute && previous.E() != mods.extruderShift ? previous.E() : 0.0);
         
         p = line.parameter('F', &ok);
         mF = ok ? p : previous.F();
@@ -113,33 +114,52 @@ GMove::GMove(const GCodeLine &line, const GMove &previous, const GMoveModifiers 
         mLen = 0.0;
     }
     
-    mET = mE + mods.extruderShift;
-    
-    if (qFuzzyCompare(mE, previous.E())) {
-        mDE = 0.0;
-        mDEe = 0.0;
-        mEe = previous.Ee();
+    if (mods.extrusionIsAbsolute) {
+//        mET = previous.ET() + mE;
+        mET = mE + mods.extruderShift;
         
-    } else {
-        mDE = mET - previous.ET();
-        if (qFuzzyCompare(mDE + 1, 1.0)) {
+        if (qFuzzyCompare(mE, previous.E())) {
             mDE = 0.0;
-        }
-        
-        mDEe = mDE * mMods.extrudeFactor;
-        if (qFuzzyCompare(mDEe + 1, 1.0)) {
             mDEe = 0.0;
-        }
-        
-        if (previous.ET() == mMods.extruderShift) {
-            mEe = mDEe;
+            mEe = previous.Ee();
             
         } else {
-            mEe = previous.Ee() + mDEe;
+            mDE = mET - previous.ET();
+            if (qFuzzyCompare(mDE + 1, 1.0)) {
+                mDE = 0.0;
+            }
+            
+            mDEe = mDE * mMods.extrudeFactor;
+            if (qFuzzyCompare(mDEe + 1, 1.0)) {
+                mDEe = 0.0;
+            }
+            
+            if (previous.ET() == mMods.extruderShift) {
+                mEe = mDEe;
+                
+            } else {
+                mEe = previous.Ee() + mDEe;
+            }
         }
+    
+        mETe = previous.ETe() + mDEe;
+        
+    } else {
+        mET = previous.ET() + mE;
+        
+        if (qFuzzyCompare(mE + 1.0, 1.0)) {
+            mDE = 0.0;
+            mDEe = 0.0;
+            mEe = 0.0;
+            
+        } else {
+            mDE = mE;
+            mDEe = mDE * mMods.extrudeFactor;
+            mEe = mDEe;
+        }
+    
+        mETe = previous.ETe() + mDEe;
     }
-
-    mETe = previous.ETe() + mDEe;
     
     mFlowE = mLen == 0.0 ? 0.0 : (mDEe / mLen);
     

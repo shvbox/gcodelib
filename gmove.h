@@ -13,6 +13,7 @@ struct GMoveModifiers {
         : extruderShift(0.0),
           speedFactor(1.0f), 
           extrudeFactor(1.0f),
+          extrusionIsAbsolute(true),
           bedTemp(0.0f),
           extTemp(0.0f),
           fanSpeed(0) {}
@@ -20,6 +21,7 @@ struct GMoveModifiers {
     double extruderShift;
     float speedFactor;
     float extrudeFactor;
+    bool extrusionIsAbsolute;
     float bedTemp;
     float extTemp;
     int fanSpeed;

@@ -2,7 +2,6 @@
 
 #include <QDebug>
 #include <QFile>
-#include <QTextStream>
 #include <algorithm>
 
 GCode::GCode(QObject *parent) 
@@ -40,13 +39,28 @@ void GCode::clearMapping()
     mMLMap.clear();
 }
 
-bool GCode::read(const QString &fileName)
+bool GCode::readFile(const QString &fileName)
 {
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly)) {
         return false;
     }
     
+    QTextStream in(&file);
+    
+    bool result = readStream(&in);
+    file.close();
+    return result;
+}
+
+bool GCode::readText(const QString &text)
+{
+    QTextStream in(text.toUtf8());
+    return readStream(&in);
+}
+
+bool GCode::readStream(QTextStream* in)
+{
     emit beginReset();
     clearMapping();
     clearData();
@@ -54,9 +68,8 @@ bool GCode::read(const QString &fileName)
     mSelected.clear();
     mVisible.clear();
     
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine();
+    while (!in->atEnd()) {
+        QString line = in->readLine();
         mLines.append(new GCodeLine(line));
     }
     
@@ -106,6 +119,12 @@ bool GCode::read(const QString &fileName)
                 
             } else if (l->code() == "M107") {
                 mods.fanSpeed = 0;
+                
+            } else if (l->code() == "M82") {
+                mods.extrusionIsAbsolute = true;
+                
+            } else if (l->code() == "M83") {
+                mods.extrusionIsAbsolute = false;
             }
         }
         
@@ -120,10 +139,19 @@ bool GCode::read(const QString &fileName)
     
     buildMapping();
     
-    file.close();
-    
     emit endReset();
     return true;
+}
+
+void GCode::clear()
+{
+    emit beginReset();
+    clearMapping();
+    clearData();
+    
+    mSelected.clear();
+    mVisible.clear();
+    emit endReset();
 }
 
 int GCode::lineToMove(int l) const
@@ -208,6 +236,18 @@ double GCode::length(int m) const
 {
     Q_ASSERT(m >= 0 && m < mMoves.size());
     return mMoves.at(m)->length();
+}
+
+double GCode::Ff(int m) const
+{
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->Ff();
+}
+
+double GCode::Ef(int m) const
+{
+    Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->Ef();
 }
 
 double GCode::E(int m) const
