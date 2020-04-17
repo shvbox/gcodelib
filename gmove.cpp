@@ -77,7 +77,20 @@ GMove::GMove(const GCodeLine &line, const GMove &previous, const GMoveModifiers 
         mJ = ok ? p : 0.0;
         
         p = line.parameter('E', &ok);
-        mE = ok ? p : (mods.extrusionIsAbsolute && previous.E() != mods.extruderShift ? previous.E() : 0.0);
+        mE = ok ? p : (mMods.extrusionIsAbsolute && previous.E() != mMods.extruderShift ? previous.E() : 0.0);
+        if (ok) {
+            mE = p;
+        } else {
+            if (mMods.extrusionIsAbsolute) {
+                double shiftDiff = mMods.extruderShift - previous.mMods.extruderShift;
+                mE = previous.E() - (qFuzzyCompare(shiftDiff + 1, 1.0) ? 0.0 : shiftDiff);
+                if (qFuzzyCompare(mE + 1, 1.0)) {
+                    mE = 0.0;
+                }
+            } else {
+                mE = 0.0;
+            }
+        }
         
         p = line.parameter('F', &ok);
         mF = ok ? p : previous.F();
@@ -114,9 +127,9 @@ GMove::GMove(const GCodeLine &line, const GMove &previous, const GMoveModifiers 
         mLen = 0.0;
     }
     
-    if (mods.extrusionIsAbsolute) {
-//        mET = previous.ET() + mE;
-        mET = mE + mods.extruderShift;
+    if (mMods.extrusionIsAbsolute) {
+        double shiftDiff = mMods.extruderShift - previous.mMods.extruderShift;
+        mET = shiftDiff + previous.ET() + (mE - previous.E());
         
         if (qFuzzyCompare(mE, previous.E())) {
             mDE = 0.0;
@@ -134,14 +147,13 @@ GMove::GMove(const GCodeLine &line, const GMove &previous, const GMoveModifiers 
                 mDEe = 0.0;
             }
             
-            if (previous.ET() == mMods.extruderShift) {
-                mEe = mDEe;
-                
-            } else {
-                mEe = previous.Ee() + mDEe;
-            }
+//            double shiftDiff = mMods.extruderShift - previous.mMods.extruderShift;
+//            if (qFuzzyCompare(shiftDiff + 1, 1.0)) {
+//                shiftDiff = 0.0;
+//            }
+            mEe = previous.Ee() + mDEe - (shiftDiff == 0.0 ? 0.0 : shiftDiff);
         }
-    
+            
         mETe = previous.ETe() + mDEe;
         
     } else {

@@ -265,6 +265,12 @@ double GCode::Ee(int m) const
 double GCode::ET(int m) const
 {
     Q_ASSERT(m >= 0 && m < mMoves.size());
+    return mMoves.at(m)->ET();
+}
+
+double GCode::ETe(int m) const
+{
+    Q_ASSERT(m >= 0 && m < mMoves.size());
     return mMoves.at(m)->ETe();
 }
 

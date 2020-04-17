@@ -62,6 +62,7 @@ public:
     double Fe(int m) const;
     double Ee(int m) const;
     double ET(int m) const;
+    double ETe(int m) const;
     double distance(int m) const;
     double dEe(int m) const;
     double flow(int m) const;
